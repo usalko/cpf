@@ -25,11 +25,17 @@ fn test_copy_all() {
 	create_file(os.join_path(folder1, 'file2.txt'))
 	create_file(os.join_path(folder1, 'file3.txt'))
 
+
+	mut cpf_paths := []string{}
 	$if windows {
-		os.execute('cpf.exe')
+		cpf_paths = os.walk_ext(os.getwd(), 'cpf.exe')
 	} $else {
-		os.execute('cpf')
+		cpf_paths = os.walk_ext(os.getwd(), 'cpf')
 	}
+	assert cpf_paths.len > 0
+	cpf := cpf_paths[0]
+
+	os.execute('$cpf "$folder1" "$folder2"')
 
 	print('OK current folder is: ${os.getwd()}')
 }
