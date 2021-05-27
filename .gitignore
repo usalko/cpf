@@ -1,0 +1,5 @@
+# There is throw binary from version control
+*.exe
+
+# Remove build folder under version control
+build
