@@ -6,6 +6,7 @@ WHERE v
 IF %ERRORLEVEL% NEQ 0 (
     echo VLang compiler doesn't available, please install it or add to the PATH variable
     echo For more details please visit to github page: https://github.com/vlang/v
+    exit /B 1
 ) ELSE (
     echo VLang compiler available:
     v version

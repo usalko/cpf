@@ -1,0 +1,124 @@
+#!/bin/bash
+
+# BUILD SCRIPT
+
+# CHECK VLANG COMPILER
+if command -v v &>/dev/null; then
+    echo VLang compiler available:
+    v version
+else
+    echo VLang compiler doesn\'t available, please install it or add to the PATH variable
+    echo For more details please visit to github page: https://github.com/vlang/v
+    exit 1
+fi
+
+# PARSE PYTHON_VERSION FROM INPUT ARGUMENTS
+V_VERSION=
+V=`command -v v`
+while test "$#" -gt 0 ; do
+    case $1 in
+        --v-version) V_VERSION="$2"; shift ;;
+        *) COMMAND=$1; ;;
+    esac
+    shift
+done
+#echo "V version is ${V_VERSION}"
+
+
+# ===========================================================================================
+# Functions
+
+function clean_build {
+    echo '*'
+    echo Clear folders
+    echo '*'
+    rm -fr dist
+    rm -fr build
+}
+
+function build {
+    echo '*'
+    echo Build cpf
+    echo '*'
+
+    rm -fr build
+    mkdir build
+    $V cpf.v -o build/cpf
+}
+
+function tests {
+    echo '*'
+    echo Tests
+    echo '*'
+
+    TMP_FOLDER=$(mktemp -d /tmp/cpf-tests.XXXXXX)
+    # COPY TEST STUFF
+    mkdir $TMP_FOLDER/data
+    cp -fR tests/data/* $TMP_FOLDER/data
+    cp -fR build/* $TMP_FOLDER
+    cp -fR tests/*_test.v $TMP_FOLDER
+    $V tests/tests.v -o $TMP_FOLDER/tests
+
+    CURRENT_FOLDER=$PWD
+    cd $TMP_FOLDER
+    $TMP_FOLDER/tests "$V"
+    RETURN_CODE=$?
+    cd $CURRENT_FOLDER
+
+    echo $TMP_FOLDER
+
+    rm -fr $TMP_FOLDER
+}
+
+function release_logs {
+    HASH1=`git rev-list -n 1 $1`
+    HASH2=`git rev-list -n 1 master`
+
+    echo HASH1 is $HASH1
+    echo HASH2 is $HASH2
+    #set HASH1=%HASH1: =%
+    #set HASH2=%HASH2: =%
+
+    git log $HASH1..$HASH2 --pretty=format:"%%h %%s %%b"
+}
+
+
+# ===========================================================================================
+# Commands
+
+if [ "x$COMMAND" == "xbuild" ]; then
+    build
+fi
+
+if [ "x$COMMAND" == "xtests" ]; then
+    build
+
+    tests
+
+    if [ "x$RETURN_CODE" == "x0" ]; then
+        echo The tests were success!
+    else
+        echo One or more tests were failing!
+        exit 1
+    fi
+fi
+
+if [ "x$COMMAND" == "xclear" ] || [ "x$COMMAND" == "xclean" ]; then
+    clean_build
+fi
+
+if [ "x$COMMAND" == "xrelease-notes" ]; then
+    release_logs $1
+fi
+
+if [ "x$COMMAND" == "x" ]; then
+    echo *
+    echo No command
+    echo *
+    echo Available commands are: build tests clear release-notes
+fi
+
+exit 0
+
+
+

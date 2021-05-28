@@ -2,11 +2,11 @@ import cli { Command, Flag }
 import os
 import time
 
-fn pre_tests(tests_cmd Command) {
+fn pre_tests(tests_cmd Command) ? {
 	print('The tests are started\n')
 }
 
-fn tests(tests_cmd Command) {
+fn tests(tests_cmd Command) ? {
 	tests_path := os.dir(os.args[0])
 	v_compiler_path := os.args[1]
 	input_files := os.walk_ext(tests_path, '_test.v')
@@ -33,7 +33,7 @@ fn tests(tests_cmd Command) {
 	print('\n')
 }
 
-fn post_tests(tests_cmd Command) {
+fn post_tests(tests_cmd Command) ? {
 	print('The tests are finished\n')
 }
 

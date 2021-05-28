@@ -8,7 +8,7 @@ fn create_file(filename string) {
 }
 
 
-fn test_copy_all() {
+fn test_copy_with_csv_filter() {
 	folder1 := os.join_path(os.getwd(), 'build', 'folder1')
 	if os.exists(folder1) {
 		os.rmdir_all(folder1) or { panic(err) }
@@ -18,8 +18,8 @@ fn test_copy_all() {
 		os.rmdir_all(folder2) or { panic(err) }
 	}
 
-	os.mkdir(folder1) or { panic(err) }
-	os.mkdir(folder2) or { panic(err) }
+	os.mkdir_all(folder1) or { panic(err) }
+	os.mkdir_all(folder2) or { panic(err) }
 
 	create_file(os.join_path(folder1, 'file1.txt'))
 	create_file(os.join_path(folder1, 'file2.txt'))
@@ -35,8 +35,8 @@ fn test_copy_all() {
 	assert cpf_paths.len > 0
 	cpf := cpf_paths[0]
 
-	os.execute('$cpf -f data\\simple.csv "$folder1" "$folder2"')
-	os.execute('$cpf -f tests\\data\\simple.csv "$folder1" "$folder2"')
+	os.execute('$cpf -f ${os.join_path("data", "simple.csv")} "$folder1" "$folder2"')
+	os.execute('$cpf -f ${os.join_path("tests", "data", "simple.csv")} "$folder1" "$folder2"')
 
 	assert os.walk_ext(folder2, '.txt').len == 2
 
