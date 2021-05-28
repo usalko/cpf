@@ -1,9 +1,13 @@
 import cli { Command, Flag }
 import os
+import encoding.csv
 
 pub struct Filter {
     pub:
         target string
+		expression string
+	mut:
+		items map[string]f32
 }
 
 // str returns the `string` representation of the `Filter`.
@@ -15,11 +19,46 @@ pub fn (filter Filter) str() string {
 	return res.join('\n')
 }
 
+pub fn (mut filter Filter) parse() {
+	filter.items = map[string]f32{}
+	// It's a file
+	if os.exists(filter.expression) {
+		// Suppose it csv
+		data := os.read_file(filter.expression) or { panic('error reading file ${filter.expression}') }
+		mut parser := csv.new_reader(data + '\n')
+		// read each line
+		for {
+			fields := parser.read() or { break }
+			for field in fields {
+				filter.items[field] = 1.0
+			}
+		}
+	}
+}
+
 pub fn (filter Filter) copy_file(file string) {
 	if file == '.' || file == '..' {
 		return
 	}
-	os.cp(file, os.join_path(filter.target, os.base(file))) or { panic(err) }
+	file_name_with_extension := os.base(file)
+	if filter.expression == '' {
+		os.cp(file, os.join_path(filter.target, file_name_with_extension)) or { panic(err) }
+		//print('Copy file 1: ${file} to ${os.join_path(filter.target, file_name_with_extension)}\n')
+		return
+	}
+	if filter.items[file_name_with_extension] > 0 {
+		os.cp(file, os.join_path(filter.target, file_name_with_extension)) or { panic(err) }
+		//print('Copy file 2: ${file} to ${os.join_path(filter.target, file_name_with_extension)}\n')
+		return
+	}
+	file_extension := os.file_ext(file)
+	file_name_without_extension := file_name_with_extension.trim_suffix(file_extension)
+	if filter.items[file_name_without_extension] > 0 {
+		os.cp(file, os.join_path(filter.target, file_name_with_extension)) or { panic(err) }
+		//print('Copy file 3: ${file} to ${os.join_path(filter.target, file_name_with_extension)}\n')
+		return
+	}
+	return
 }
 
 pub fn (filter Filter) copy(path string) {
@@ -43,41 +82,40 @@ pub fn (filter Filter) copy(path string) {
 }
 
 
-fn pre_cpf(cpf_cmd Command) {
-	print('Pre')
+fn pre_copy(copy_command Command) ? {
+	print('')
 }
 
-fn cpf(cpf_cmd Command) {
+fn copy(copy_command Command) ? {
 	//execution_path := os.dir(os.args[0])
-	from_path := os.args[1]
-	to_path := os.args[2]
-    filter := Filter {
-        target: to_path
+    mut filter := Filter {
+        target: copy_command.args[1]
+		expression: copy_command.flags.get_string('filter') ?
     }
-	filter.copy(from_path)
+	filter.parse()
+	filter.copy(copy_command.args[0])
 }
 
-fn post_cpf(cpf_cmd Command) {
-	print('Post')
+fn post_copy(copy_command Command) ? {
+	print('')
 }
 
 fn main() {
-    mut cmd := Command{
+    mut command := Command{
         name: 'copy'
         description: 'Copy some files.'
         version: '0.1.0'
         usage: '<from-folder> <to-folder>'
         required_args: 2
-        pre_execute: pre_cpf
-        execute: cpf
-        post_execute: post_cpf
+        pre_execute: pre_copy
+        execute: copy
+        post_execute: post_copy
     }
-    cmd.add_flag(Flag{
+    command.add_flag(Flag{
         flag: .string
         name: 'filter'
         abbrev: 'f'
         description: 'Define filter for copy.'
     })
-    cmd.add_command(cmd)
-    cmd.parse(os.args)
+    command.parse(os.args)
 }

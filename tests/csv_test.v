@@ -35,7 +35,10 @@ fn test_copy_all() {
 	assert cpf_paths.len > 0
 	cpf := cpf_paths[0]
 
-	os.execute('$cpf "$folder1" "$folder2"')
+	os.execute('$cpf -f data\\simple.csv "$folder1" "$folder2"')
+	os.execute('$cpf -f tests\\data\\simple.csv "$folder1" "$folder2"')
+
+	assert os.walk_ext(folder2, '.txt').len == 2
 
 	print('OK current folder is: ${os.getwd()}')
 }
